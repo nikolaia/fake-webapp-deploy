@@ -1,0 +1,69 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "sites_testing16092_name": {
+            "value": null
+        },
+        "servers_testing16092sql_name": {
+            "value": null
+        },
+        "serverfarms_testing16092_name": {
+            "value": null
+        },
+        "vaults_testing16092_kv_name": {
+            "value": null
+        },
+        "config_web_name": {
+            "value": null
+        },
+        "databases_master_name": {
+            "value": null
+        },
+        "keys_ServiceManaged_name": {
+            "value": null
+        },
+        "databases_testing16092_name": {
+            "value": null
+        },
+        "auditingPolicies_Default_name": {
+            "value": null
+        },
+        "encryptionProtector_current_name": {
+            "value": null
+        },
+        "advisors_DropIndex_name": {
+            "value": null
+        },
+        "hostNameBindings_testing16092.azurewebsites.net_name": {
+            "value": null
+        },
+        "advisors_CreateIndex_name": {
+            "value": null
+        },
+        "advisors_SchemaIssue_name": {
+            "value": null
+        },
+        "backupLongTermRetentionVaults_RegisteredVault_name": {
+            "value": null
+        },
+        "auditingPolicies_Default_name_1": {
+            "value": null
+        },
+        "geoBackupPolicies_Default_name": {
+            "value": null
+        },
+        "advisors_ForceLastGoodPlan_name": {
+            "value": null
+        },
+        "advisors_DbParameterization_name": {
+            "value": null
+        },
+        "transparentDataEncryption_current_name": {
+            "value": null
+        },
+        "backupLongTermRetentionPolicies_Default_name": {
+            "value": null
+        }
+    }
+}

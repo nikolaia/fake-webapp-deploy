@@ -286,3 +286,29 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# Build related
+/[Aa]rtifacts/
+/[Tt]ools/
+tools/Cake/
+tools/xunit.runners/
+tools/xunit.runner.console/
+tools/gitreleasemanager/
+tools/GitVersion.CommandLine/
+tools/Addins/
+tools/packages.config.md5sum
+!tools/nuget.exe
+
+# Test results
+TestResult.xml
+
+# Folders used in buildscript
+build/
+artifacts/
+testresults/
