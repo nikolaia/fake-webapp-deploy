@@ -49,11 +49,10 @@ At this point we would previously add a lot of steps and variables in a VSTS Rel
 
 We also decided that we didn't want any magic happening after the artifact was pushed to the Azure WebApp. Kudu, which is the backbone of deployments to Azure WebApps has default buildscripts that it uses to deploy your application. We don't want that, we want a script that can be run on a developers machine. KuduSync, which syncs files from a staging area to the wwwroot of your WebApp can be run locally (https://github.com/projectkudu/KuduSync). Actually all of Kudu can be run locally if you wanna test some more advanced cases (https://github.com/projectkudu/Kudu)! Custom deployment scripts are supported and can easily be FAKE-scripts! AWESOME! We can use the same DSL for our deployscript and our buildscript:
 
-```
-.deployment
-deployment.cmd
-deployment.fsx
-```
+- [.deployment](.deployment)
+- [deployment.cmd](deployment.cmd)
+- [deployment.fsx](deployment.fsx)
+
 So we decided that our build-script  should output three things:
 
 - The zip'ed artifact to deploy to the WebApp, including the .deployment, deployment.cmd and deployment.fsx and our console app for migrating the database.
@@ -62,7 +61,5 @@ So we decided that our build-script  should output three things:
 
 The normal VSTS WebApp deploy uses ARM to deploy, and it assumes everything in your .zip file is ready for wwwroot.Luckily for us, using Azure WebApps and Kudu, there is a Zip Push Deploy option in the Kudu API that lets us push a .zip file and will trigger a deploy in the same way that a Fetch-deploy does: https://github.com/projectkudu/kudu/wiki/Deploying-from-a-zip-file. The upload script in our build-artifacts, that uploads our .zip to Kudu/Azure WebApps is a simple http-call. To get access to the endpoint in a way that would work on both the developer machine and on VSTS, we used the Azure CLI 2.0 command that let's you fetch the access token used by the CLI. This way we just needed our subscription setup in VSTS with our VSTS Azure App Registration/RBAC, and the Azure CLI Step. Now we can run the same script locally as long as we are logged in to the cli:
 
-```
-upload.cmd
-upload.ps1
-```
+- [upload.cmd](upload.cmd)
+- [upload.ps1](upload.ps1)
