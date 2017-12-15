@@ -9,7 +9,34 @@ Source controlled build-scripts ensure that we can check out old code and still 
 FAKE, even though it's a DSL, is valid F# and has great editor support in VS Code using the Ionide-extension. It also works inside Visual Studio. We didn't get this from Cake or Psake.
 
 FAKE normally has a build.cmd/build.sh file that downloads FAKE from NuGet and then bootstraps your build.fsx file. The simplest build.fsx files usually just calls MSBuild and zips the result, but you can do more advanced things like check if NuGet Packages are consolidated and fail the build if they are not:
-https://gist.github.com/nikolaia/9ea36a7fc70222d0eb6252881eaefc8a#file-consolidatenuget-fs
+
+```fsharp
+type PackageReferenceFile = NuGet.PackageReferenceFile
+Target "NuGetPackagesConsolidated" <| fun _ ->
+    !! (sprintf "./src/%s*/packages.config" appName)
+    -- "**/obj/**/packages.config"
+    |> Seq.map PackageReferenceFile
+    |> Seq.collect (fun prf -> prf.GetPackageReferences())
+    |> Seq.groupBy (fun pr -> pr.Id)
+    |> Seq.filter (fun p -> (snd p |> Seq.distinct |> Seq.length) > 1 )
+    |> Seq.map (fun p -> fst p , snd p |> Seq.distinct)
+    |> function 
+        | packages when packages |> Seq.isEmpty -> ()
+        | packages -> 
+            seq {
+                yield "The following packages are not consolidated:"
+
+                for (k,v) in packages do
+                    yield (sprintf "    Package: %s Versions: %A" k v)
+            
+                yield "You need to consolidate packages across the solution:"
+                yield "    * Right click on the solution inside VS"
+                yield "    * Choose Manage NuGet Packages for Solution"
+                yield "    * Choose the Consolidate tab"
+                yield "    * Make sure you sync the package versions" }
+            |> Seq.iter (printfn "%s")
+            failwith "Packages not consolidated"
+```
 
 I've gotten feedback that this build-target isn't 100% complete:
 https://twitter.com/kent_boogaart/status/935784973512015872
