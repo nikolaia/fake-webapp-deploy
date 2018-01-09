@@ -1,14 +1,20 @@
 # Setup for deploying on Azure App Service with F# Make
 
-P.S: All code is available here: https://github.com/nikolaia/fake-webapp-deploy
+All code is available here: https://github.com/nikolaia/fake-webapp-deploy
 
-We have been using FAKE (F# Make) in the latest projects I've been part of for some crucial reasons:
+This article goes trough deploying to Azure App Service without depending on external services and using scripts that can be run and tested locally.
 
-Running builds locally. No magic that a build-server controls. No need to commit code, and push it, to see if the Artifact produced by your build is correct. Everything can be done on the developer machine.
+## Why FAKE
 
-Source controlled build-scripts ensure that we can check out old code and still build it. See audits of who changed it, and most important of all: Since the script is part of the repository we can change it in a branch without changing it on the build server, having other branches that don't support these changes fail (Yes we could also clone or copy the build-definition on the build server, but that is boring work and requires someone to clean up later).
+We have been using FAKE (F# Make) in the latest projects I've been part of for some obvious reasons:
 
-FAKE, even though it's a DSL, is valid F# and has great editor support in VS Code using the Ionide-extension. It also works inside Visual Studio. We didn't get this from Cake or Psake.
+Running builds locally. No magic that a build-server controls. No need to commit code, and push it, to see if the Artifact produced by your build is correct. Everything can be done on the developer machine and builds are **reproducible**.
+
+**Source controlled** build-scripts ensure that we can check out old code and still build it. See audits of who changed it, and most important of all: Since the script is part of the repository we can change it in a branch without changing it on the build server, having other branches that don't support these changes fail (Yes we could also clone or copy the build-definition on the build server, but that is boring work and requires someone to clean up later).
+
+FAKE, even though it's a DSL, is valid F# and has **great editor support** in VS Code using the Ionide-extension. It also works inside Visual Studio. We didn't get this from Cake or Psake.
+
+## What does a build script do
 
 FAKE normally has a build.cmd/build.sh file that downloads FAKE from NuGet and then bootstraps your build.fsx file. The simplest build.fsx files usually just calls MSBuild and zips the result, but you can do more advanced things like check if NuGet Packages are consolidated and fail the build if they are not:
 
@@ -41,11 +47,14 @@ Target "NuGetPackagesConsolidated" <| fun _ ->
 ```
 
 I've gotten feedback that this build-target isn't 100% complete:
-https://twitter.com/kent_boogaart/status/935784973512015872
+
+> The help advice just needs an "OR JUST USE PAKET" tacked on the end for A+ passive aggression. - https://twitter.com/kent_boogaart/status/935784973512015872
 
 We do several things in our build.fsx. We create a LocalDB instance for integration tests, migrate it up and run end-to-end integration tests against it to test our application.
 
 If all tests pass we create an Artifact. Artifacts, with real version numbers, that are considered candidates for production, are created on the build-server as soon as a Pull Request is approved and merged into the Master branch [TODO: Link master-only/stable-master/github-flow].
+
+## What should a deploy script do
 
 At this point we would previously add a lot of steps and variables in a VSTS Release Definition to put this Artifact in a Azure WebApp, and we would happily go on with our life. However, we soon ran into the same problem that we had with our build before moving the logic from the centralized build-server back into source control: The feedback loop is just to long. Small adjustments to the deploy pipeline would take a long time to test, and if you didn't merge it to master you would have to clone the definition, change all variables and point it at a new app to test until you felt it was safe to merge your changes into master without halting the deployment pipeline for other people working on the same app.
 
@@ -135,6 +144,8 @@ So we decided that our build-script  should output three things:
 - The zip'ed artifact to deploy to the WebApp, including the .deployment, deploy.cmd and deploy.fsx and our console app for migrating the database.
 - The ARM-templates for the application. They should be run on every deploy to ensure correct settings, AppSettings and ConnectionStrings.
 - A script in a similar style to our buildscript (upload.cmd/upload.ps1) that gets the artifact where it needs to go. It should be  source-controlled and possible to run from the developers machine if need be.
+
+## Uploading our artifact
 
 The normal VSTS WebApp deploy uses ARM to deploy, and it assumes everything in your .zip file is ready to be served from the `wwwroot` folder. Luckily for us, using Azure WebApps and Kudu, there is a Zip Push Deploy option in the Kudu API that lets us push a .zip file and will trigger a deploy in the same way that a Fetch-deploy does: https://github.com/projectkudu/kudu/wiki/Deploying-from-a-zip-file. The upload script in our build-artifacts, that uploads our .zip to Kudu/Azure WebApps is a simple http-call. To get access to the endpoint in a way that would work on both the developer machine and on VSTS, we used the Azure CLI 2.0 command that let's you fetch the access token used by the CLI. This way we just needed our subscription setup in VSTS with our VSTS Azure App Registration/RBAC, and the Azure CLI Step. Now we can run the same script locally as long as we are logged in to the Azure CLI (2.0, the new one). Again our [upload.cmd](upload.cmd) simply bootstraps the actuall script:
 
