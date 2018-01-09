@@ -170,3 +170,11 @@ if ($vstsWorkDir -and $vstsReleaseDefName) {
 Write-Host "Calling $apiUrl with $zipPath using token '$bearerToken'"
 Invoke-RestMethod -Uri $apiUrl -Headers @{Authorization=$bearerToken} -Method POST -InFile $zipPath -ContentType "multipart/form-data"
 ```
+
+Now we can easily deploy from a release management tool like VSTS. One step do apply the ARM-template, and a second for running `deploy.cmd`:
+
+![assets/releasedef_steps.PNG](assets/releasedef_steps.PNG)
+
+The Azure CLI step would look like this:
+
+![assets/releasedef_azure_cli_step.PNG](assets/releasedef_azure_cli_step.PNG)
