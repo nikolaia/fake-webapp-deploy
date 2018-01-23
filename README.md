@@ -2,21 +2,35 @@
 
 All code is available here: https://github.com/nikolaia/fake-webapp-deploy
 
-This article goes trough deploying to Azure App Service without depending on external services and using scripts that can be run and tested locally.
+This article goes trough deploying to Azure App Service without depending on external services and using scripts that can be run and tested locally. The scripts are `build.cmd`, that creates an artifact (zip) and outputs it together with `upload.cmd`. `upload.cmd` moves the zip file from where the artifact was built to the actual Azure Web App. Once there the artifact is unpacked, and `deploy.cmd` (that was bundled inside with the actual code) deploy the app, run migrations and some smoke tests to ensure the deploy succeeded. For the scripts we use the [F# Make (FAKE)](https://github.com/fsharp/FAKE) build system.
+
+These three scripts can all be run from a developers machine to deploy a new version of your app to an Azure App Service. They can also be split between two applications like Teamcity and Octopus Deploy. Teamcity would run `build.cmd`, creating the artifact, while Octopus Deploy would run `upload.cmd` with the correct Web App name as a parameter. The plus here is that this approach won't lock you into these systems with variables and steps that are not source controlled or reproducible on your local machine. You could just as easy switch to VSTS and create simple build- and release-definitions that run the same two scripts.
+
+In this article, when I talk about an _artifact_, I'm talking about the result of an actual build. In our case it is a zip-file, which is immutable and ensures that when we push this artifact to different environments, we are sure we are deploying the same code to these environments. This makes a lot of sense when testing in one environment and you want to promote the code you just tested to a production environment.
 
 ## Why FAKE
 
-We have been using FAKE (F# Make) in the latest projects I've been part of for some obvious reasons:
+From FAKEs own documentation:
 
-Running builds locally. No magic that a build-server controls. No need to commit code, and push it, to see if the Artifact produced by your build is correct. Everything can be done on the developer machine and builds are **reproducible**.
+> "FAKE - F# Make" is a cross platform build automation system. Due to its integration in F#, all benefits of the .NET Framework and functional programming can be used, including the extensive class library, powerful debuggers and integrated development environments like Visual Studio or MonoDevelop, which provide syntax highlighting and code completion.
+
+We have been using FAKE (F# Make) in the last projects I've been part of for some obvious reasons:
+
+Running the exact same build as our CI-server locally. No magic steps that are only set up on a CI-server. No need to commit and push code to see if the _artifact_ produced by your build is correct. Everything can be done on the developer machine and builds are **reproducible**.
 
 **Source controlled** build-scripts ensure that we can check out old code and still build it. See audits of who changed it, and most important of all: Since the script is part of the repository we can change it in a branch without changing it on the build server, having other branches that don't support these changes fail (Yes we could also clone or copy the build-definition on the build server, but that is boring work and requires someone to clean up later).
 
 FAKE, even though it's a DSL, is valid F# and has **great editor support** in VS Code using the Ionide-extension. It also works inside Visual Studio. We didn't get this from Cake or Psake.
 
+I really recommend you check it out! If you are not convinced yet here is a description of FAKE from their own documentation:
+
+> "FAKE - F# Make" is a cross platform build automation system. Due to its integration in F#, all benefits of the .NET Framework and functional programming can be used, including the extensive class library, powerful debuggers and integrated development environments like Visual Studio or MonoDevelop, which provide syntax highlighting and code completion.
+
+
+
 ## What does a build script do
 
-FAKE normally has a build.cmd/build.sh file that downloads FAKE from NuGet and then bootstraps your build.fsx file. The simplest build.fsx files usually just calls MSBuild and zips the result, but you can do more advanced things like check if NuGet Packages are consolidated and fail the build if they are not:
+Looking into any repository that uses FAKE you'll see `build.cmd` and/or `build.sh` file. It's a bootstrapping script that downloads FAKE from NuGet and launches it with your `build.fsx` file as the input. The simplest `build.fsx` files usually just call MSBuild and packs the result into a `.npkg` or `.zip` file. Of course you can do more advanced things like migrating databases, running tests and custom stuff like this script we use to check if NuGet Packages are consolidated between projects in the solution:
 
 ```fsharp
 type PackageReferenceFile = NuGet.PackageReferenceFile
@@ -46,11 +60,12 @@ Target "NuGetPackagesConsolidated" <| fun _ ->
             failwith "Packages not consolidated"
 ```
 
-I've gotten feedback that this build-target isn't 100% complete:
+I've gotten feedback that this build target could still be improved:
 
-> The help advice just needs an "OR JUST USE PAKET" tacked on the end for A+ passive aggression. - https://twitter.com/kent_boogaart/status/935784973512015872
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">The help advice just needs an &quot;OR JUST USE PAKET&quot; tacked on the end for A+ passive aggression.</p>&mdash; Kent Boogaart (@kent_boogaart) <a href="https://twitter.com/kent_boogaart/status/935784973512015872?ref_src=twsrc%5Etfw">November 29, 2017</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-We do several things in our build.fsx. We create a LocalDB instance for integration tests, migrate it up and run end-to-end integration tests against it to test our application.
+We do several more things in our `build.fsx`! An example that you can see in the [example repository](https://github.com/nikolaia/fake-webapp-deploy) is how we create a LocalDB instance for integration tests, migrate it up and run integration tests against it to verify our database access logic and that our dapper queries don't have typos in them.
 
 If all tests pass we create an Artifact. Artifacts, with real version numbers, that are considered candidates for production, are created on the build-server as soon as a Pull Request is approved and merged into the Master branch [TODO: Link master-only/stable-master/github-flow].
 
