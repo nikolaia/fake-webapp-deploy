@@ -18,38 +18,32 @@ let buildDir = sourceDir @@ @"\build"
 let testOutput = sourceDir @@ @"\testresults"
 let artifactDir = sourceDir @@ @"\artifacts"
 
-let runningOnBuildServer =
-    match buildServer with
-    | LocalBuild -> true // SWITCH TO FALSE BEFORE MERGING
-    | _ -> true // | TeamFoundation | TeamCity | AppVeyor etc
-
 let version =
     match buildServer with
     | TeamFoundation | TeamCity -> buildVersion
     | LocalBuild -> "1.0.0-local"
     | _ -> environVarOrDefault "version" "1.0.0"
-let buildMode = if runningOnBuildServer then "Release" else "Debug"
-let buildOptimize = if runningOnBuildServer then "True" else "False"
+let buildMode = "Release"
+let buildOptimize = "True"
 
 let integrationTestDatabaseName = sprintf @"%sIntegrationTests" connectionStringName
 let connectionString =  @"Data Source=(LocalDb)\MSSQLLocalDB"
 let connectionStringDev = sprintf "%s;Database=%s;Integrated Security=True;Connect Timeout=100;" connectionString integrationTestDatabaseName
 let connectionDev = ConnectionString(connectionStringDev,SqlServer(V2014))
 let findDllInBuildFolder dllGlob =
-    sprintf "%s/%s" (if runningOnBuildServer then buildDir else sprintf "./src/**/bin/%s" buildMode) dllGlob
+    !! (sprintf "%s/%s" buildDir dllGlob)
 
 //------------------------------------------------------------------------------
 // Variables
 //------------------------------------------------------------------------------
 
-// TestCategories can be used in TestFilters (MSTest) to exclude tests:
-// TestCategory!=IgnoreOnVSTSBecauseOfNoAccessToOnPremResource&TestCategory!=NeedsAadCertificateInLocalMachineStore
 let setNUnit3Params testResultsFile (defaults : NUnit3Params) =
     let output = sprintf "%s\\%s" testOutput testResultsFile
     { defaults with
         ResultSpecs = [output]
         TeamCity = (buildServer = TeamCity)
-        Params = if runningOnBuildServer then "exclude=IgnoreOnVSTSBecauseOfNoAccessToOnPremResource;exclude=NeedsAadCertificateInLocalMachineStore" else ""
+        // Where: https://github.com/nunit/docs/wiki/Test-Selection-Language
+        Where = "cat != ConventionTests" // ConventionTests use reflection, which for some reason fails in the nunit test runner
         ToolPath = "./tools/Nunit.ConsoleRunner/tools/nunit3-console.exe"  }
 
 let setMsBuildParams (defaults : MSBuildParams) =
@@ -150,9 +144,7 @@ Target "RestorePackages" <| fun _ ->
 
 Target "Build" <| fun _ ->
     !! sln
-    |> MSBuild null "Build" [
-                                if runningOnBuildServer then yield "OutputPath", buildDir
-                            ]
+    |> MSBuild null "Build" ["OutputPath", buildDir]
     |> ignore
 
 Target "CreateIntegrationTestsDatabase" <| fun _ ->
@@ -162,17 +154,20 @@ Target "DeleteIntegrationTestsDatabase" <| fun _ ->
     deleteDb integrationTestDatabaseName
 
 Target "MigrateDatabaseCI" <| fun _ ->
-    let dll = sprintf "%s.Migrations.dll" appName
-    MigrateToLatest connectionDev [findDllInBuildFolder dll] {DefaultMigrationOptions with Profile="CI";}
+    let assembly = 
+        sprintf "%s.Migrations.dll" appName |> findDllInBuildFolder
+        |> Seq.head
+
+    MigrateToLatest connectionDev [assembly] {DefaultMigrationOptions with Profile="CI";}
 
 Target "IntegrationTests" <| fun _ ->
     CreateDir testOutput
-    !! (findDllInBuildFolder "*.Tests.Integration.dll")
+    findDllInBuildFolder "*.Tests.Integration.dll"
     |> NUnit3 (setNUnit3Params "IntegrationTestResults.xml")
 
 Target "UnitTests" <| fun _ ->
     CreateDir testOutput
-    !! (findDllInBuildFolder "*.Tests.Unit.dll")
+    findDllInBuildFolder "*.Tests.Unit.dll"
     |> NUnit3 (setNUnit3Params "UnitTestResults.xml")
 
 type PackageReferenceFile = NuGet.PackageReferenceFile
@@ -218,6 +213,9 @@ Target "Artifact" <| fun _ ->
 
     CopyFile artifactDir "upload.cmd"
     CopyFile artifactDir "upload.ps1"
+
+    let artifactDirArm = (artifactDir + "/arm/")
+    CopyDir artifactDirArm "infrastructure/arm" (fun _ -> true)
 
 Target "CI" <| DoNothing
 
