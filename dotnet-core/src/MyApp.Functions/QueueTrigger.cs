@@ -28,18 +28,14 @@ namespace MyApp.Functions
             int dequeueCount,
             TraceWriter log)
         {
-
-            log.Info("C# Queue trigger function processed a request.");
-            
-            // // THIS IS ONLY FOR DEBUGGING AND HAS TO BE OFF FORT HIS APP TO BE GDPR COMPLIANT:
-            // log.Info($"C# Queue trigger function processed: {invite.ToString()}\n" +
-            //     $"queueTrigger={queueTrigger}\n" +
-            //     $"expirationTime={expirationTime}\n" +
-            //     $"insertionTime={insertionTime}\n" +
-            //     $"nextVisibleTime={nextVisibleTime}\n" +
-            //     $"id={id}\n" +
-            //     $"popReceipt={popReceipt}\n" + 
-            //     $"dequeueCount={dequeueCount}");
+            log.Info($"C# Queue trigger function processed: {invite.ToString()}\n" +
+                $"queueTrigger={queueTrigger}\n" +
+                $"expirationTime={expirationTime}\n" +
+                $"insertionTime={insertionTime}\n" +
+                $"nextVisibleTime={nextVisibleTime}\n" +
+                $"id={id}\n" +
+                $"popReceipt={popReceipt}\n" + 
+                $"dequeueCount={dequeueCount}");
 
             return invite;
         }
