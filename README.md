@@ -1,5 +1,7 @@
 # Setup for deploying on Azure App Service with F# Make
 
+This document is for the `dotnet-framework` part, and hasn't been updated to document the `dotnet-core` example.
+
 All code is available here: https://github.com/nikolaia/fake-webapp-deploy
 
 This article goes trough deploying to Azure App Service without depending on external services and using scripts that can be run and tested locally. The scripts are `build.cmd`, that creates an artifact (zip) and outputs it together with `upload.cmd`. `upload.cmd` moves the zip file from where the artifact was built to the actual Azure Web App. Once there the artifact is unpacked, and `deploy.cmd` (that was bundled inside with the actual code) deploy the app, run migrations and some smoke tests to ensure the deploy succeeded. For the scripts we use the [F# Make (FAKE)](https://github.com/fsharp/FAKE) build system.

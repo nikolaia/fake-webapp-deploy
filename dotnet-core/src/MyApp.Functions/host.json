@@ -1,0 +1,12 @@
+{
+  "logger": {
+    "categoryFilter": {
+      "defaultLevel": "None",
+      "categoryLevels": {
+        "Host.Results": "None",
+        "Function": "None",
+        "Host.Aggregator": "None"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "bindings": [{
+      "type": "httpTrigger",
+      "methods": ["post"],
+      "authLevel": "function",
+      "name": "req",
+      "route": "queue"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "return"
+    },
+    {
+      "type": "queue",
+      "direction": "out",
+      "name": "invite",
+      "queueName": "invites",
+      "connection": "AzureWebJobsStorage"
+    }
+  ],
+  "scriptFile": "../MyApp.Functions.dll",
+  "entryPoint": "MyApp.Functions.HttpTrigger.Run"
+}

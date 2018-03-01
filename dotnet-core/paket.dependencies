@@ -1,0 +1,8 @@
+// [ FAKE GROUP ]
+group NetcoreBuild
+    source https://api.nuget.org/v3/index.json
+
+    nuget Fake.Core.Target prerelease
+    nuget Fake.DotNet.Cli prerelease
+    nuget Fake.IO.FileSystem prerelease
+    nuget Fake.IO.Zip prerelease

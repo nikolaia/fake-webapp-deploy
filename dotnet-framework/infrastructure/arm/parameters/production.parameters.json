@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "AppServiceName": {
+      "value": "myapp"
+    },
+    "TagEnvironment": {
+      "value": "production"
+    },
+    "ServerFarmId": {
+      "value": "/subscriptions/4345ec8c-7ff3-4fe4-a84e-68bcd330e163/resourceGroups/MyApp/providers/Microsoft.Web/serverfarms/myapp-plan"
+    },
+    "Environment": {
+      "value": "Production"
+    },
+    "SqlFullyQualifiedDomainName": {
+      "value": "myapp.database.windows.net"
+    },
+    "DatabaseName": {
+      "value": "myappdatabase"
+    }
+  }
+}

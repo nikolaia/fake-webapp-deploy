@@ -1,0 +1,20 @@
+{
+	"disabled": false,
+	"bindings": [{
+			"type": "queueTrigger",
+			"direction": "in",
+			"name": "invite",
+			"queueName": "invites",
+			"connection": "AzureWebJobsStorage"
+		},
+		{
+			"name": "$return",
+			"type": "table",
+			"tableName": "Invites",
+			"connection": "AzureWebJobsStorage",
+			"direction": "out"
+		}
+	],
+	"scriptFile": "../MyApp.Functions.dll",
+	"entryPoint": "MyApp.Functions.QueueTrigger.Run"
+}
